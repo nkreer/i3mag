@@ -9,6 +9,7 @@ $scriptlocation = __FILE__;
 
 switch($command){
     case 'debug':
+        // Output the parsed xrandr information for debugging
         var_dump(new Output());
         break;
     case 'install':
@@ -31,25 +32,64 @@ switch($command){
             $i3config .= 'bindsym $mod+minus exec php '.$scriptlocation.' -'."\n";
             // Add mod and + for increasing magnification level
             $i3config .= 'bindsym $mod+plus exec php '.$scriptlocation.' +'."\n";
+            // Initialise on startup
+            $i3config .= 'exec php '.$scriptlocation." init";
             file_put_contents($configpath, $i3config);
-            echo "Configured i3mag.\n";
+            echo "Configured i3mag. Restarting i3...\n";
+            shell_exec("i3-msg restart");
         } else {
             echo "Cancelled.";
             exit();
         }
         break;
+    case 'init':
+        // Initialise i3mag when i3 starts
+        echo "Initialising i3mag...\n";
+        $information = new Output();
+
+        // Get the primary monitor
+        foreach($information->displays as $display){
+            if($display->isPrimary){
+                $primaryMonitor = $display;
+                break; // Cancel, we have the primary screen
+            }
+        }
+
+        if(!isset($primaryMonitor)){
+            echo "Couldn't find the primary display. Aborting.\n";
+            exit();
+        }
+
+        $display = [];
+        $display["name"] = $primaryMonitor->name;
+        $display["baseResolution"] = $primaryMonitor->resolution;
+        $display = json_encode($display);
+        file_put_contents(__DIR__."/display.json", $display);
+        break;
     case '+':
         // Zoom in
-        shell_exec("xrandr --output LVDS-1 --panning 1360x768 --mode 864x486");
+        $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
+
+        $base = getBaseResolution($config);
+
+        shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode 864x486");
         break;
     case '-':
         // Zoom out
-        shell_exec("xrandr --output LVDS-1 --panning 1360x768 --mode 1360x768");
+        $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
+
+        $base = getBaseResolution($config);
+
+        shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$base[1]);
         break;
     default:
         echo "Invalid command.\n";
         exit();
         break;
+}
+
+function getBaseResolution($config){
+    return [$config["name"], $config["baseResolution"]];
 }
 
 function getUserInput($prompt){
