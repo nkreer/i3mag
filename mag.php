@@ -1,11 +1,16 @@
 <?php
 
+include("xrandr-utility.php");
+
 // Simple screen magnification for i3 using xrandr
 
 $command = $argv[1];
 $scriptlocation = __FILE__;
 
 switch($command){
+    case 'debug':
+        var_dump(new Output());
+        break;
     case 'install':
         // Add the necessary configuration to i3 automatically
         if(!empty($argv[2])){
@@ -42,8 +47,8 @@ switch($command){
         shell_exec("xrandr --output LVDS-1 --panning 1360x768 --mode 1360x768");
         break;
     default:
-            echo "Invalid command.\n";
-            exit();
+        echo "Invalid command.\n";
+        exit();
         break;
 }
 
