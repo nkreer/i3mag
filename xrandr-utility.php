@@ -8,14 +8,8 @@ class Output{
     public $output;
     public $displays = [];
 
-    public function __construct($file = null){
-        // Load the output from a file if needed for debugging
-        if($file){
-            $this->output = file_get_contents($file);
-        } else {
-            $this->output = shell_exec("xrandr");
-        }
-
+    public function __construct(){
+        $this->output = shell_exec("xrandr");
         $this->parse();
     }
 

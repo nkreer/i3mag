@@ -10,12 +10,12 @@ $scriptlocation = __FILE__;
 switch($command){
     case 'debug':
         // Output the parsed xrandr information for debugging
-	$output = new Output();
-	var_dump($output);
+    	$output = new Output();
+    	var_dump($output);
 
-	$config = json_decode(file_get_contents(__DIR__."/display.json"),     true);
-	$display = $output->displays[$config["name"]];
-	var_dump(getResolutionsAspectRatio($display));
+    	$config = json_decode(file_get_contents(__DIR__."/display.json"),     true);
+    	$display = $output->displays[$config["name"]];
+    	var_dump(getResolutionsAspectRatio($display));
         break;
     case 'install':
         // Add the necessary configuration to i3 automatically
@@ -67,8 +67,8 @@ switch($command){
 
         $display = [];
         $display["name"] = $primaryMonitor->name;
-	$display["baseResolution"] = $primaryMonitor->resolution;
-	$display["state"] = 0;
+        $display["baseResolution"] = $primaryMonitor->resolution;
+        $display["state"] = 0;
         $display = json_encode($display);
         file_put_contents(__DIR__."/display.json", $display);
         break;
@@ -76,36 +76,36 @@ switch($command){
         // Zoom in
         $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
 
-	$xrandr = new Output();
+        $xrandr = new Output();
         $base = getBaseResolution($config);
-	$modes = getResolutionsAspectRatio($xrandr->displays[$config["name"]]);
+        $modes = getResolutionsAspectRatio($xrandr->displays[$config["name"]]);
 
-	$state = $config["state"] + 1;
-
-	if($state <= (count($modes)-1)){
-		shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$modes[$state]);
-		saveConfig($config, $state);
-	} else {
-		shell_exec("i3-nagbar -t warning -m 'Impossible to zoom in any further.'");
-	}
+        $state = $config["state"] + 1; // One step down
+        
+        if($state <= (count($modes)-1)){
+            shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$modes[$state]);
+            saveConfig($config, $state);
+        } else {
+            shell_exec("i3-nagbar -t warning -m 'Already on maximum zoom level.'");
+        }
         break;
     case '-':
         // Zoom out
         $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
 
         $base = getBaseResolution($config);
-	$xrandr = new Output();
+        $xrandr = new Output();
         $base = getBaseResolution($config);
-	$modes = getResolutionsAspectRatio($xrandr->displays[$config["name"]]);
+        $modes = getResolutionsAspectRatio($xrandr->displays[$config["name"]]);
 
-	$state = $config["state"] - 1;
+        $state = $config["state"] - 1;  // One step up.
 
-	if($state >= 0){
-		shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$modes[$state]);
-		saveConfig($config, $state);
-	} else {
-		shell_exec("i3-nagbar -t warning -m 'Impossible to zoom out further.'");
-	}
+        if($state >= 0){
+            shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$modes[$state]);
+            saveConfig($config, $state);
+        } else {
+            shell_exec("i3-nagbar -t warning -m 'Impossible to zoom out further.'");
+        }
         break;
     default:
         echo "Invalid command.\n";
@@ -118,29 +118,30 @@ function getBaseResolution($config){
 }
 
 /**
- * Get all modes that have the same aspect ratio as the given display and are smaller than the base resolution
- */
+* Get all modes that have the same aspect ratio as the given display and are smaller than the base resolution
+*/
 function getResolutionsAspectRatio(Display $display){
-	$resolution = $display->resolution;
-	$resolution = explode("x", $resolution);
-	$baseAspect = $resolution[0]/$resolution[1];
-	$baseProduct = array_product($resolution);
-	$others = [];
-	foreach($display->modes as $mode){
-		$result = explode("x", $mode);
-		$resultAspect = $result[0]/$result[1];
-		$resultProduct = array_product($result);
-		if(round($baseAspect) === round($resultAspect) && $baseProduct >= $resultProduct){
-			// We have a match!
-			$others[] = $mode;
-		}
-	}
-	return $others;
+    $resolution = $display->resolution;
+    $resolution = explode("x", $resolution);
+    $baseAspect = $resolution[0]/$resolution[1]; // Calculate aspect ratio
+    $baseProduct = array_product($resolution);
+    $others = [];
+    foreach($display->modes as $mode){
+        $result = explode("x", $mode);
+        $resultAspect = $result[0]/$result[1];
+        $resultProduct = array_product($result);
+        // Check for same aspect ratio and avoid adding things twice or larger than the base resolution
+        if(round($baseAspect) === round($resultAspect) && $baseProduct >= $resultProduct && !in_array($mode, $others)){
+            // We have a match!
+            $others[] = $mode;
+        }
+    }
+    return $others;
 }
 
 function saveConfig($config, $currentState){
-	$config["state"] = $currentState;
-	file_put_contents(__DIR__."/display.json", json_encode($config));
+    $config["state"] = $currentState;
+    file_put_contents(__DIR__."/display.json", json_encode($config));
 }
 
 function getUserInput($prompt){
