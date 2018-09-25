@@ -10,12 +10,12 @@ $scriptlocation = __FILE__;
 switch($command){
     case 'debug':
         // Output the parsed xrandr information for debugging
-    	$output = new Output();
-    	var_dump($output);
+        $output = new Output();
+        var_dump($output);
 
-    	$config = json_decode(file_get_contents(__DIR__."/display.json"),     true);
-    	$display = $output->displays[$config["name"]];
-    	var_dump(getResolutionsAspectRatio($display));
+        $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
+        $display = $output->displays[$config["name"]];
+        var_dump(getResolutionsAspectRatio($display));
         break;
     case 'install':
         // Add the necessary configuration to i3 automatically
