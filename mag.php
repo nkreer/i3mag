@@ -10,7 +10,12 @@ $scriptlocation = __FILE__;
 switch($command){
     case 'debug':
         // Output the parsed xrandr information for debugging
-        var_dump(new Output());
+	$output = new Output();
+	var_dump($output);
+
+	$config = json_decode(file_get_contents(__DIR__."/display.json"),     true);
+	$display = $output->displays[$config["name"]];
+	var_dump(getResolutionsAspectRatio($display));
         break;
     case 'install':
         // Add the necessary configuration to i3 automatically
@@ -62,7 +67,8 @@ switch($command){
 
         $display = [];
         $display["name"] = $primaryMonitor->name;
-        $display["baseResolution"] = $primaryMonitor->resolution;
+	$display["baseResolution"] = $primaryMonitor->resolution;
+	$display["state"] = 0;
         $display = json_encode($display);
         file_put_contents(__DIR__."/display.json", $display);
         break;
@@ -70,17 +76,36 @@ switch($command){
         // Zoom in
         $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
 
+	$xrandr = new Output();
         $base = getBaseResolution($config);
+	$modes = getResolutionsAspectRatio($xrandr->displays[$config["name"]]);
 
-        shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode 864x486");
+	$state = $config["state"] + 1;
+
+	if($state <= (count($modes)-1)){
+		shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$modes[$state]);
+		saveConfig($config, $state);
+	} else {
+		shell_exec("i3-nagbar -t warning -m 'Impossible to zoom in any further.'");
+	}
         break;
     case '-':
         // Zoom out
         $config = json_decode(file_get_contents(__DIR__."/display.json"), true);
 
         $base = getBaseResolution($config);
+	$xrandr = new Output();
+        $base = getBaseResolution($config);
+	$modes = getResolutionsAspectRatio($xrandr->displays[$config["name"]]);
 
-        shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$base[1]);
+	$state = $config["state"] - 1;
+
+	if($state >= 0){
+		shell_exec("xrandr --output ".$base[0]." --panning ".$base[1]." --mode ".$modes[$state]);
+		saveConfig($config, $state);
+	} else {
+		shell_exec("i3-nagbar -t warning -m 'Impossible to zoom out further.'");
+	}
         break;
     default:
         echo "Invalid command.\n";
@@ -90,6 +115,32 @@ switch($command){
 
 function getBaseResolution($config){
     return [$config["name"], $config["baseResolution"]];
+}
+
+/**
+ * Get all modes that have the same aspect ratio as the given display and are smaller than the base resolution
+ */
+function getResolutionsAspectRatio(Display $display){
+	$resolution = $display->resolution;
+	$resolution = explode("x", $resolution);
+	$baseAspect = $resolution[0]/$resolution[1];
+	$baseProduct = array_product($resolution);
+	$others = [];
+	foreach($display->modes as $mode){
+		$result = explode("x", $mode);
+		$resultAspect = $result[0]/$result[1];
+		$resultProduct = array_product($result);
+		if(round($baseAspect) === round($resultAspect) && $baseProduct >= $resultProduct){
+			// We have a match!
+			$others[] = $mode;
+		}
+	}
+	return $others;
+}
+
+function saveConfig($config, $currentState){
+	$config["state"] = $currentState;
+	file_put_contents(__DIR__."/display.json", json_encode($config));
 }
 
 function getUserInput($prompt){
