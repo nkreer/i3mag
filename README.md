@@ -1,20 +1,7 @@
 # i3mag
 
-A screen magnification solution for [i3wm](https://i3wm.org/) that uses xrandr's panning option. And yes, it's a PHP script. So make sure you have the required interpreter for that.
+A WIP rewrite of a screen magnification solution for [i3wm](https://i3wm.org/) that uses X's panning option.
 
 ## Who is this for?
 
 Visually impaired people who'd like to use full screen magnification and the i3 tiling window manager. Don't try to use this for screencasts etc. as it changes your actual screen resolution when activated.  
-
-## Getting started
-
-Installation of i3mag is easy. It can add itself to your i3 configuration automatically so you don't have to figure this stuff out. Just navigate to your favourite place to install things and run the following commands (but remember to change the path to that of your own i3 config): 
-
-```
-git clone https://github.com/nkreer/i3mag
-cd i3mag
-php mag.php install /path/to/your/i3/config
-php mag.php init
-```
-
-It'll create the shortcuts ``$mod+plus`` for zooming in and ``$mod+minus`` for zooming out. On i3 startup, it'll automatically initialise.
