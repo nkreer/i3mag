@@ -18,3 +18,12 @@ php mag.php init
 ```
 
 It'll create the shortcuts ``$mod+plus`` for zooming in and ``$mod+minus`` for zooming out. On i3 startup, it'll automatically initialise.
+
+If you'd like to change i3's config yourself (e.g. for using custom keyboard shortcuts or not having i3mag start with the wm), use these options as a base and change them to your liking:
+
+```
+# Auto-configuration for i3mag
+bindsym $mod+minus exec php mag.php -
+bindsym $mod+plus exec php mag.php +
+exec php mag.php init
+```
