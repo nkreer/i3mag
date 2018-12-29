@@ -65,6 +65,7 @@ switch($command){
             exit();
         }
 
+	// Save information about the monitor and set the base resolution to the currently used mode
         $display = [];
         $display["name"] = $primaryMonitor->name;
         $display["baseResolution"] = $primaryMonitor->resolution;
@@ -113,6 +114,9 @@ switch($command){
         break;
 }
 
+/**
+ * Returns the base resolution saved in the config
+ */
 function getBaseResolution($config){
     return [$config["name"], $config["baseResolution"]];
 }
@@ -139,11 +143,17 @@ function getResolutionsAspectRatio(Display $display){
     return $others;
 }
 
+/**
+ * Write the configuration in/including its current state
+ */
 function saveConfig($config, $currentState){
     $config["state"] = $currentState;
     file_put_contents(__DIR__."/display.json", json_encode($config));
 }
 
+/**
+ * Utility function for getting clean user input
+ */
 function getUserInput($prompt){
     echo $prompt.": ";
     return trim(fgets(STDIN));
